@@ -1,0 +1,16 @@
+# Environnement virtuel
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Modèle MediaPipe (téléchargé automatiquement au lancement)
+*.task
+
+# Éditeur / système
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
