@@ -1,149 +1,106 @@
-# 😴 Détection de fatigue par webcam
+# Détection de fatigue par webcam
 
-Programme Python qui surveille les yeux en temps réel avec la webcam et **déclenche une alarme sonore si les yeux restent fermés plus de 2 secondes**, signe d'endormissement (par exemple au volant ou pendant une longue séance de travail).
+Programme Python qui analyse les yeux en temps réel via la webcam et déclenche une alarme sonore lorsque les yeux restent fermés plus de 2 secondes.
 
-Projet réalisé avec **OpenCV** et **MediaPipe**, construit pas à pas en 8 étapes.
+Réalisé avec OpenCV et MediaPipe.
 
----
+# Fonctionnalités
 
-## ✨ Fonctionnalités
+- Détection du visage et des yeux en temps réel
+- Calcul de l'ouverture des yeux Eye Aspect Ratio
+- Calibration automatique du seuil selon la personne
+- Alerte visuelle et sonore après 2 secondes des yeux fermés
+- Comptage des clignements et des alertes
+- Courbe de l'EAR affichée en direct
 
-- 🎥 Analyse de la webcam en temps réel
-- 👁️ Détection du visage et des yeux (478 points avec MediaPipe Face Landmarker)
-- 📐 Calcul de l'ouverture des yeux (EAR, *Eye Aspect Ratio*)
-- 🎯 **Calibration automatique** : le seuil s'adapte aux yeux de chaque personne
-- 🚨 **Alerte** : écran rouge et alarme sonore en boucle après 2 s d'yeux fermés
-- 📊 Statistiques en direct : nombre de clignements, clignements par minute, nombre d'alertes
-- 📈 Courbe de l'EAR en temps réel, avec la ligne du seuil
+# Principe
 
----
+MediaPipe Face Landmarker détecte 478 points sur le visage. Six points par œil sont utilisés pour calculer l'EAR, le rapport entre la hauteur et la largeur de l'œil :
 
-## 🧠 Comment ça marche
-
-### 1. Repérer les yeux
-MediaPipe détecte 478 points sur le visage. On en garde **6 par œil** :
 
 ```
-        p2    p3
-  p1 ●──●─────●──● p4      p1, p4 = coins de l'œil (largeur)
-        p6    p5           p2-p6, p3-p5 = haut/bas (hauteur)
+EAR = (|p2 - p6| + |p3 - p5|) / (2 * |p1 - p4|)
 ```
 
-### 2. Mesurer l'ouverture de l'œil (EAR)
+
+L'EAR vaut environ 0,30 les yeux ouverts et 0,10 les yeux fermés. Étant un rapport il ne dépend pas de la distance à la caméra.
+
+Au démarrage, le programme mesure pendant 3 secondes l'EAR de la personne avec les yeux ouverts  fixe le seuil à 70 % de cette valeur. La médiane pour ignorer les clignements.
+
+Ensuite :
+- une fermeture de 0,05 à 0,4 s est comptée comme un clignement ;
+- une fermeture de 2 s ou plus déclenche l'alerte.
+
+# Technologies
+
+- Python 3
+- OpenCV : webcam, affichage
+- MediaPipe : détection des points du visage
+- NumPy : calculs
+- winsound : alarme sonore (Windows)
+
+# Installation
+
 
 ```
-        |p2 − p6| + |p3 − p5|
-EAR = ─────────────────────────
-           2 × |p1 − p4|
-```
-
-| État de l'œil | EAR |
-|---|---|
-| Ouvert | ≈ 0,25 – 0,35 |
-| Fermé | ≈ 0,10 |
-
-Comme c'est un rapport hauteur / largeur, la valeur ne dépend **pas** de la distance à la caméra.
-
-### 3. Calibrer
-Pendant les 3 premières secondes, le programme mesure l'EAR normal de la personne (yeux ouverts) et fixe le seuil à **70 %** de cette valeur. On utilise la **médiane** pour que les clignements pendant la calibration ne faussent pas la mesure.
-
-### 4. Décider
-| Durée sous le seuil | Interprétation |
-|---|---|
-| 0,05 – 0,4 s | Clignement (compté) |
-| ≥ 2 s | **Alerte fatigue** 🚨 |
-
----
-
-## 🛠️ Technologies
-
-| Technologie | Rôle |
-|---|---|
-| Python 3 | Langage principal |
-| OpenCV | Lecture de la webcam, affichage, dessin |
-| MediaPipe (Face Landmarker) | Détection des points du visage |
-| NumPy | Calculs (distances, médiane) |
-| winsound | Alarme sonore (Windows) |
-
----
-
-## 🚀 Installation
-
-```powershell
-git clone https://github.com/<ton-pseudo>/detection-fatigue.git
+git clone https://github.com/sapy-y/detection-fatigue.git
 cd detection-fatigue
-
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-> Le modèle `face_landmarker.task` (~4 Mo) est téléchargé automatiquement au premier lancement.
 
-## ▶️ Utilisation
+Le modèle `face_landmarker.task` est téléchargé automatiquement au premier lancement.
 
-```powershell
+# Utilisation
+
+
+```
 python detection_fatigue.py
 ```
 
-1. Regarde la caméra, **yeux ouverts**, pendant les 3 s de calibration.
-2. Ferme les yeux plus de 2 s : l'écran devient rouge et l'alarme sonne.
-3. Rouvre les yeux : l'alarme s'arrête.
 
-| Touche | Action |
-|---|---|
-| `q` | Quitter (affiche le résumé de la session) |
-| `c` | Recalibrer (pour une nouvelle personne) |
+Garder les yeux ouverts pendant les 3 secondes de calibration.
 
-### Réglages (en haut du fichier)
+ Touche et Action
 
-| Variable | Défaut | Effet |
-|---|---|---|
-| `RATIO` | `0.7` | Seuil = RATIO × EAR normal. Plus haut → plus sensible |
-| `DUREE_CALIBRATION` | `3.0` | Durée de la calibration (s) |
-| `DUREE_ALERTE` | `2.0` | Durée d'yeux fermés avant l'alerte (s) |
+ touche q = Quitter 
+ touche c = Recalibrer 
 
----
+Paramètres modifiables en haut du fichier :
 
-## 📚 Construction pas à pas
+ Variable - Défaut - Rôle 
 
-Le dossier `etapes/` contient chaque étape du projet, pour suivre la progression :
+ la variable RATIO, defaut 0.7 et rôle Seuil = RATIO × EAR normal 
+ la variable DUREE_CALIBRATION, defaut 3.0 et rôle Durée de la calibration par seconde 
+ la variable DUREE_ALERTE, defaut 2.0 et rôle Durée d'yeux fermés avant l'alerte par seconde
 
-| Étape | Fichier | Contenu |
-|---|---|---|
-| 1 | `etape1.py` | Ouvrir la webcam |
-| 2 | `etape2.py` | Détecter le visage et dessiner les 478 points |
-| 3 | `etape3.py` | Isoler les 6 points de chaque œil |
-| 4 | `etape4.py` | Calculer l'EAR |
-| 5 | `etape5.py` | Savoir depuis combien de temps les yeux sont fermés |
-| 6 | `etape6.py` | Alerte : écran rouge et alarme sonore |
-| 7 | `etape7.py` | Calibration automatique |
-| 8 | `etape8.py` | Statistiques et courbe en direct |
+# Structure
 
----
 
-## ⚠️ Limites
+```
+detection_fatigue.py   programme principal
+etapes/                construction du projet en 8 étapes
+alarme.wav             son de l'alarme
+requirements.txt
+```
 
-- Fonctionne sous **Windows** (le son utilise `winsound`).
-- Nécessite un éclairage correct et un visage bien visible.
-- Les lunettes avec reflets peuvent perturber la détection.
-- Projet pédagogique : **ce n'est pas un dispositif de sécurité certifié**.
 
-## 🔮 Pistes d'amélioration
+Étapes : 1 webcam, 2 détection du visage, 3 points des yeux, 4 calcul de l'EAR, 5 durée de fermeture, 6 alerte, 7 calibration, 8 statistiques.
 
-- Détecter les bâillements (ouverture de la bouche)
-- Détecter la tête qui tombe (inclinaison du visage)
-- Compatibilité macOS / Linux pour le son
-- Enregistrer les statistiques de chaque session dans un fichier CSV
+# Limites
 
----
+- Son de l'alarme disponible uniquement sous Windows
+- Nécessite un éclairage correct et un visage bien visible
+- Projet pédagogique, pas un dispositif de sécurité
 
-## 🙏 Crédits
+# Crédits
 
-- Méthode EAR : Soukupová & Čech, *Real-Time Eye Blink Detection using Facial Landmarks* (2016)
-- Modèle de visage : [MediaPipe Face Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) (Google)
-- Son d'alarme : « Alarm Clock » par freesound_community, via [Pixabay](https://pixabay.com/sound-effects/)
+- Méthode EAR : Soukupová et Čech, Real-Time Eye Blink Detection using Facial Landmarks, 2016
+- Modèle : MediaPipe Face Landmarker (Google)
+- Son : "Alarm Clock" par freesound_community, Pixabay
 
-## 👩‍💻 Autrice
+# Auteur
 
-**Yasmine** — étudiante en développement IA à l'ECE Paris
+Yasmine, étudiante en développement IA à l'ECE Paris
